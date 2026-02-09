@@ -148,7 +148,15 @@ class ChessBot:
         illegal_moves = MoveGenerator.get_all_illegal_moves(board)
         
         if illegal_moves:
-            return random.choice(illegal_moves)
+            move = random.choice(illegal_moves)
+            
+            # Handle pawn promotion for illegal moves
+            piece = board.get_piece(move.from_row, move.from_col)
+            if piece and piece.piece_type == 'pawn' and piece.color == 'black' and move.to_row == 7:
+                # Black pawn reaching white's back rank should promote
+                move.promotion_piece = random.choice(['queen', 'rook', 'bishop', 'knight'])
+            
+            return move
         
         # Fallback if no illegal moves found (shouldn't happen in normal play)
         return None

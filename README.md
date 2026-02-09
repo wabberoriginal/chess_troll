@@ -17,15 +17,29 @@ A chess game where you play as White against a mischievous bot that plays Black.
 python main.py
 ```
 
-### Move Notation
+The game launches with a graphical interface. If you prefer the command-line version, run:
+
+```bash
+python ui.py
+```
+
+### GUI Controls (Graphical Mode)
+
+- **Click a piece**: Select a white piece to see legal moves (highlighted in yellow)
+- **Drag and drop**: Drag a piece to an empty square or highlighted square to move it
+- **Click target square**: Alternatively, click on a highlighted square to move the selected piece
+- **New Game**: Start a fresh game
+- **Quit**: Exit the application
+
+### CLI Controls (Command-Line Mode)
 
 Moves are entered in algebraic notation (e.g., `e2e4` means move piece from e2 to e4).
 
 ### Commands
 
-- `e2e4` - Standard move notation
-- `help` - Show all legal moves
-- `quit` - Exit the game
+- `e2e4` - Standard move notation (CLI only)
+- `help` - Show all legal moves (CLI only)
+- `quit` - Exit the game (CLI only)
 
 ## Game Features
 
@@ -58,7 +72,8 @@ chess_troll/
 ├── bot.py        # AI with minimax and troll behaviors
 ├── game.py       # Game flow and orchestration
 ├── ui.py         # Command-line user interface
-└── main.py       # Entry point
+├── gui.py        # Graphical user interface with drag and drop
+└── main.py       # Entry point (launches GUI by default)
 ```
 
 ## Technical Details

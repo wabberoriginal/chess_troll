@@ -95,10 +95,11 @@ class ChessGame:
         move_key = (move.from_row, move.from_col, move.to_row, move.to_col)
         
         if move_key not in legal_move_set:
-            # Illegal move - just return without applying
+            # Illegal move - apply it visually but record as illegal
+            MoveGenerator.apply_move(self.board, move)
+            self.move_history.append(move)
             from_notation = chr(ord('a') + move.from_col) + str(8 - move.from_row)
             to_notation = chr(ord('a') + move.to_col) + str(8 - move.to_row)
-            self.move_history.append(move)
             return True, f"Bot plays ILLEGAL move: {from_notation}{to_notation}"
         
         # Apply legal move

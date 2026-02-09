@@ -325,6 +325,15 @@ class MoveGenerator:
         legal_moves_black = MoveGenerator.get_all_legal_moves(board, 'black')
         legal_moves_set = set((m.from_row, m.from_col, m.to_row, m.to_col) for m in legal_moves_black)
         
+        # Get black king position to prevent capturing it
+        black_king_pos = None
+        for row in range(8):
+            for col in range(8):
+                piece = board.get_piece(row, col)
+                if piece and piece.color == 'black' and piece.piece_type == 'king':
+                    black_king_pos = (row, col)
+                    break
+        
         # 1. Try moving black pieces to all possible squares (including illegal ones like into check)
         for row in range(8):
             for col in range(8):
@@ -344,6 +353,9 @@ class MoveGenerator:
                                 # Check if target is occupied by opponent or own piece
                                 target = board.get_piece(to_row, to_col)
                                 if target:
+                                    # Never capture own king
+                                    if target.color == 'black' and target.piece_type == 'king':
+                                        continue
                                     if target.color != 'black':
                                         move.is_capture = True
                                         move.captured_piece = target
@@ -360,8 +372,12 @@ class MoveGenerator:
                             if to_row == row and to_col == col:
                                 continue
                             
-                            move = Move(row, col, to_row, to_col)
+                            # Skip if moving white's own king (meaningless)
                             target = board.get_piece(to_row, to_col)
+                            if target and target.color == 'white' and target.piece_type == 'king':
+                                continue
+                            
+                            move = Move(row, col, to_row, to_col)
                             if target:
                                 if target.color != 'white':
                                     move.is_capture = True
