@@ -5,6 +5,7 @@ from tkinter import messagebox, font
 from typing import Optional, Tuple
 from game import ChessGame
 from moves import MoveGenerator
+import time
 
 
 class ChessGUI:
@@ -293,12 +294,94 @@ class ChessGUI:
         """Execute bot move."""
         self.status_label.config(text="Bot is thinking...")
         self.root.update()
-        
-        success, message = self.game.bot_move()
-        
+        # Ask bot for its move (but do not apply yet) so we can animate
+        move = self.game.bot.get_move(self.game.board)
+
+        # No move -> game over (checkmate or stalemate)
+        if move is None:
+            # Let ChessGame.bot_move handle end states for consistency
+            success, message = self.game.bot_move()
+            self._update_display()
+            self.draw_board()
+            if self.game.game_over:
+                self._show_game_over()
+            return
+
+        # Calculate canvas coordinates
+        from_row, from_col = move.from_row, move.from_col
+        to_row, to_col = move.to_row, move.to_col
+
+        def square_center(r, c):
+            x = c * self.SQUARE_SIZE + self.SQUARE_SIZE // 2
+            y = r * self.SQUARE_SIZE + self.SQUARE_SIZE // 2
+            return x, y
+
+        from_x, from_y = square_center(from_row, from_col)
+        to_x, to_y = square_center(to_row, to_col)
+
+        # Find the canvas item for the moving piece
+        tag = f'piece_{from_row}_{from_col}'
+        items = self.canvas.find_withtag(tag)
+
+        # If no item found (shouldn't happen), draw a temporary piece
+        if items:
+            piece_item = items[0]
+            # Lift piece above others
+            self.canvas.tag_raise(piece_item)
+        else:
+            piece = self.game.board.get_piece(from_row, from_col)
+            symbol = self.PIECE_SYMBOLS[(piece.color, piece.piece_type)] if piece else '?'
+            text_color = 'white' if piece and piece.color == 'white' else 'black'
+            piece_item = self.canvas.create_text(from_x, from_y, text=symbol, font=('Arial', 32), fill=text_color)
+
+        # Animate movement in small steps
+        steps = 12
+        dx = (to_x - from_x) / steps
+        dy = (to_y - from_y) / steps
+        for i in range(steps):
+            self.canvas.move(piece_item, dx, dy)
+            self.root.update()
+            time.sleep(0.02)
+
+        # After animation, apply the move to the model and refresh board
+        # Use ChessGame.bot_move logic to ensure special behaviors (illegal moves, promotions, game over) are handled
+        # But since bot_move would pick a move itself, we instead apply the same move and mirror bot_move's post-checks.
+        # Determine legality
+        legal_moves = MoveGenerator.get_all_legal_moves(self.game.board, 'black')
+        legal_move_set = set((m.from_row, m.from_col, m.to_row, m.to_col) for m in legal_moves)
+        move_key = (move.from_row, move.from_col, move.to_row, move.to_col)
+
+        # Apply move to board and record
+        from_notation = chr(ord('a') + move.from_col) + str(8 - move.from_row)
+        to_notation = chr(ord('a') + move.to_col) + str(8 - move.to_row)
+
+        if move_key not in legal_move_set:
+            MoveGenerator.apply_move(self.game.board, move)
+            self.game.move_history.append(move)
+            # Update display
+            self._update_display()
+            self.draw_board()
+            # Show possible game over
+            if self.game.game_over:
+                self._show_game_over()
+            return
+
+        # Legal move: apply normally and run endgame checks
+        MoveGenerator.apply_move(self.game.board, move)
+        self.game.move_history.append(move)
+
+        # Check game state after black move
+        if MoveGenerator.is_checkmate(self.game.board, 'white'):
+            self.game.game_over = True
+            self.game.winner = 'black'
+        elif MoveGenerator.is_stalemate(self.game.board, 'white'):
+            self.game.game_over = True
+            self.game.winner = 'stalemate'
+
+        # Finally update UI
         self._update_display()
         self.draw_board()
-        
+
         if self.game.game_over:
             self._show_game_over()
     

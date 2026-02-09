@@ -19,13 +19,13 @@ class ChessBot:
         
         Move counting behavior:
         - 5th, 10th, 15th... move: random legal move
-        - 7th, 14th, 21st... move: random illegal move
+        - 4th, 8th, 12th... move: random illegal move
         - Otherwise: minimax best move
         """
         self.move_count += 1
         
-        # 7th move: random illegal move
-        if self.move_count % 7 == 0:
+        # every 4th move: random illegal move
+        if self.move_count % 4 == 0:
             return self._get_random_illegal_move(board)
         
         # 5th move: random legal move
