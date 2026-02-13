@@ -361,9 +361,23 @@ class ChessGUI:
             # Update display
             self._update_display()
             self.draw_board()
-            # Show possible game over
-            if self.game.game_over:
+            # After applying an illegal move, check for checkmate/stalemate
+            if MoveGenerator.is_checkmate(self.game.board, 'white'):
+                self.game.game_over = True
+                self.game.winner = 'black'
+                self._update_display()
+                self.draw_board()
                 self._show_game_over()
+                return
+            if MoveGenerator.is_stalemate(self.game.board, 'white'):
+                self.game.game_over = True
+                self.game.winner = 'stalemate'
+                self._update_display()
+                self.draw_board()
+                self._show_game_over()
+                return
+
+            return
             return
 
         # Legal move: apply normally and run endgame checks

@@ -100,6 +100,16 @@ class ChessGame:
             self.move_history.append(move)
             from_notation = chr(ord('a') + move.from_col) + str(8 - move.from_row)
             to_notation = chr(ord('a') + move.to_col) + str(8 - move.to_row)
+            # After applying an illegal move, the move may still produce checkmate/stalemate.
+            if MoveGenerator.is_checkmate(self.board, 'white'):
+                self.game_over = True
+                self.winner = 'black'
+                return True, f"Bot plays ILLEGAL move: {from_notation}{to_notation}. Black wins! White is in checkmate."
+            if MoveGenerator.is_stalemate(self.board, 'white'):
+                self.game_over = True
+                self.winner = 'stalemate'
+                return True, f"Bot plays ILLEGAL move: {from_notation}{to_notation}. Stalemate!"
+
             return True, f"Bot plays ILLEGAL move: {from_notation}{to_notation}"
         
         # Apply legal move

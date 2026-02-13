@@ -146,20 +146,48 @@ class ChessBot:
     def _get_random_illegal_move(self, board: Board) -> Optional[Move]:
         """Get a random illegal move (that stays on board)."""
         illegal_moves = MoveGenerator.get_all_illegal_moves(board)
-        
-        if illegal_moves:
-            move = random.choice(illegal_moves)
-            
-            # Handle pawn promotion for illegal moves
-            piece = board.get_piece(move.from_row, move.from_col)
-            if piece and piece.piece_type == 'pawn' and piece.color == 'black' and move.to_row == 7:
-                # Black pawn reaching white's back rank should promote
-                move.promotion_piece = random.choice(['queen', 'rook', 'bishop', 'knight'])
-            
-            return move
-        
-        # Fallback if no illegal moves found (shouldn't happen in normal play)
-        return None
+
+        if not illegal_moves:
+            return None
+
+        # If black king is currently in check, prefer moves that resolve the check.
+        # First try legal moves (prefer resolving checks with legal play); otherwise
+        # fall back to illegal moves that would resolve the check.
+        if MoveGenerator.is_in_check(board, 'black'):
+            legal_resolving = []
+            legal_moves = MoveGenerator.get_all_legal_moves(board, 'black')
+            for m in legal_moves:
+                board_copy = board.copy()
+                MoveGenerator.apply_move(board_copy, m)
+                if not MoveGenerator.is_in_check(board_copy, 'black'):
+                    legal_resolving.append(m)
+
+            if legal_resolving:
+                return random.choice(legal_resolving)
+
+            # No legal resolving moves; check illegal moves for any that would resolve the check.
+            resolving_moves = []
+            for m in illegal_moves:
+                piece = board.get_piece(m.from_row, m.from_col)
+                if not piece or piece.color != 'black':
+                    continue
+                board_copy = board.copy()
+                MoveGenerator.apply_move(board_copy, m)
+                if not MoveGenerator.is_in_check(board_copy, 'black'):
+                    resolving_moves.append(m)
+
+            if resolving_moves:
+                illegal_moves = resolving_moves
+
+        move = random.choice(illegal_moves)
+
+        # Handle pawn promotion for illegal moves
+        piece = board.get_piece(move.from_row, move.from_col)
+        if piece and piece.piece_type == 'pawn' and piece.color == 'black' and move.to_row == 7:
+            # Black pawn reaching white's back rank should promote
+            move.promotion_piece = random.choice(['queen', 'rook', 'bishop', 'knight'])
+
+        return move
     
     def reset(self) -> None:
         """Reset move counter."""
